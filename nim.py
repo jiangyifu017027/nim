@@ -1,9 +1,22 @@
-import math
 import random
 import time
 
 
+# Q-Learning算法用于在未知环境中训练一个智能体(agent)做出最优决策。
+# 该算法的核心思想是学习一个价值函数Q(s,a)，其中s表示当前状态，a表示智能体在该状态下采取的行动。
+# Q(s,a)表示在当前状态下采取行动a所能获得的期望奖励值。Q值越高，则说明该行动对获得最大奖励的贡献越大。
+
+# Q(s,a) = Q(s,a) + α(r + γ max Q(s',a') - Q(s,a))
+# 其中，Q(s,a)表示在状态s下采取行动a的Q值，α是学习率（控制每次更新的权重），r是执行行动a后，
+# 智能体能够得到的立即奖励，γ是折扣因子（控制未来奖励的权重，表示对未来奖励的重视程度），
+# s'和a'表示执行当前行动后进入的新状态和新的行动，max(Q(s',a'))表示在下一个状态s'中采取所有可能行动中的最大Q值。
+
+
 class Nim():
+# 在 Nim 游戏中，我们从一定数量的堆开始，每个堆都有一定数量的物体。
+# 玩家轮流：在玩家的回合中，玩家从任何一个非空堆中移除任何非负数量的物体。
+# 谁拿走最后一个物体，谁就输了。
+
 
     def __init__(self, initial=[1, 3, 5, 7]):
         """
@@ -96,14 +109,15 @@ class NimAI():
         best_future = self.best_future_reward(new_state)
         self.update_q_value(old_state, action, old, reward, best_future)
 
-    def get_q_value(self, state, action):
+    def get_q_value(self, state: list[int], action: tuple[int, int]) -> int:
         """
         Return the Q-value for the state `state` and the action `action`.
         If no Q-value exists yet in `self.q`, return 0.
         """
-        raise NotImplementedError
+        return self.q.get((tuple(state), action), 0)
 
-    def update_q_value(self, state, action, old_q, reward, future_rewards):
+    def update_q_value(self, state: list[int], action: tuple[int], \
+                    old_q: float, reward: float, future_rewards: float) -> None:
         """
         Update the Q-value for the state `state` and the action `action`
         given the previous Q-value `old_q`, a current reward `reward`,
@@ -118,9 +132,11 @@ class NimAI():
         `alpha` is the learning rate, and `new value estimate`
         is the sum of the current reward and estimated future rewards.
         """
-        raise NotImplementedError
+        new_q = old_q + self.alpha * (reward + future_rewards - old_q)
+        self.q[(tuple(state), action)] = new_q
+        return
 
-    def best_future_reward(self, state):
+    def best_future_reward(self, state: list[int]):
         """
         Given a state `state`, consider all possible `(state, action)`
         pairs available in that state and return the maximum of all
@@ -130,9 +146,20 @@ class NimAI():
         Q-value in `self.q`. If there are no available actions in
         `state`, return 0.
         """
-        raise NotImplementedError
+        return max([self.get_q_value(state, action) \
+                    for action in Nim.available_actions(state)], default=0)
 
-    def choose_action(self, state, epsilon=True):
+    def choose_best_action(self, state: list[int]) -> tuple[int, int]:
+        """
+        Given a state `state`, return the best action
+        available in the state (the one with the highest Q-value,
+        using 0 for pairs that have no Q-values).
+        """
+        return max(Nim.available_actions(state), \
+                    key=lambda action: self.get_q_value(state, action))
+
+
+    def choose_action(self, state: list[int], epsilon=True) -> tuple[int, int]:
         """
         Given a state `state`, return an action `(i, j)` to take.
 
@@ -147,7 +174,13 @@ class NimAI():
         If multiple actions have the same Q-value, any of those
         options is an acceptable return value.
         """
-        raise NotImplementedError
+        if not epsilon:
+            return self.choose_best_action(state)
+        else:
+            random_decimal = random.random()
+            if random_decimal <= self.epsilon:
+                return random.choice(list(Nim.available_actions(state)))
+            return self.choose_best_action(state)
 
 
 def train(n):
