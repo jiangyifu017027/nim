@@ -151,6 +151,7 @@ class NimAI():
 
     # update_q_value函数采用状态state、动作action、现有Q值old_q、当前奖励reward和未来奖励的估计future_rewards
     # 并根据Q学习公式更新状态/动作对的Q值
+    # def update_q_value(self, state, action, old_q, reward, future_rewards)
     def update_q_value(self, state: list[int], action: tuple[int], \
                     old_q: float, reward: float, future_rewards: float) -> None:
         """
